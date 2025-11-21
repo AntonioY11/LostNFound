@@ -1,0 +1,40 @@
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Frontend / backend node_modules (explicit)
+frontend/node_modules/
+backend/node_modules/
+
+# Environment files (do NOT commit secrets)
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+
+# Local databases
+backend/*.db
+*.sqlite
+*.sqlite3
+
+# Uploaded files and build artifacts
+backend/uploads/
+frontend/dist/
+build/
+dist/
+
+# Logs
+*.log
+
+# OS / Editor
+.DS_Store
+.vscode/
+.idea/
+
+# Coverage
+coverage/
+
+# TypeScript
+*.tsbuildinfo
