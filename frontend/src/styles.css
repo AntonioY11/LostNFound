@@ -1,0 +1,23 @@
+/* Simplified student-style CSS: minimal, neutral, no heavy branding */
+*{box-sizing:border-box}
+body{font-family:Arial, Helvetica, sans-serif; background:#fafafa; margin:0; color:#111}
+.app-container{max-width:900px;margin:24px auto;padding:16px}
+.navbar{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #e2e2e2;padding:8px 12px}
+.nav-left{display:flex;align-items:center;gap:8px}
+.logo{font-weight:700;color:#333}
+.nav-links{display:flex;gap:8px}
+.nav-links a{padding:6px 10px;color:#333;text-decoration:none}
+.nav-links a.active{font-weight:700;text-decoration:underline}
+.card{background:#fff;border:1px solid #e8e8e8;padding:14px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:1fr 300px;gap:14px}
+.form-row{display:flex;flex-direction:column;gap:6px}
+input[type='text'],input[type='date'],textarea,select{padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px}
+textarea{min-height:80px}
+button{background:#2b6cb0;color:#fff;padding:8px 12px;border:0;border-radius:4px;cursor:pointer}
+.small{font-size:13px;color:#666}
+.item-list{list-style:none;padding:0;margin:0}
+.item-list li{padding:8px;border-bottom:1px solid #f3f3f3}
+.h-stack{display:flex;gap:10px;align-items:center}
+.center{display:flex;align-items:center;justify-content:center}
+.footer{margin-top:20px;text-align:center;color:#666;font-size:13px}
+@media (max-width:800px){.grid{grid-template-columns:1fr}}
