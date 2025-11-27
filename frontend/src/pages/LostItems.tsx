@@ -43,7 +43,7 @@ export default function LostItems(){
             </div>
             <div className="form-row">
               <input type="file" onChange={e=>setFile(e.target.files ? e.target.files[0] : null)} />
-              <div className="small">Optional image helps matching</div>
+              <div className="small">Optional image helps identification</div>
             </div>
             <div>
               <button type="submit">Submit Lost Item</button>

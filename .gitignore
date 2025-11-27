@@ -14,6 +14,9 @@ backend/node_modules/
 backend/.env
 frontend/.env
 
+# Local secret examples - safe to keep `.env.example` committed, but ignore any real env files
+.env.*
+
 # Local databases
 backend/*.db
 *.sqlite
@@ -32,6 +35,9 @@ dist/
 .DS_Store
 .vscode/
 .idea/
+
+# Windows thumbnail cache
+thumbs.db
 
 # Coverage
 coverage/

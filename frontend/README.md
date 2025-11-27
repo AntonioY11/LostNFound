@@ -1,8 +1,8 @@
-Frontend (React + TypeScript) quick scaffold
+Frontend (React + TypeScript)
 
-This folder contains a minimal Vite + React + TypeScript scaffold to call the backend.
+Minimal Vite + React + TypeScript frontend that talks to the backend API.
 
-Run locally:
+Run locally
 
 ```powershell
 cd frontend
@@ -10,15 +10,34 @@ npm install
 npm run dev
 ```
 
-Environment:
-- Create a file `.env` in `frontend` with `VITE_API_BASE=http://localhost:3001` if backend runs locally.
+Local environment
 
-Pages included:
-- Home: shows recent lost/found items
-- Lost: form to post lost items and list
-- Found: form to post found items and list
-- Profile: sign-in and notifications (a seeded account is available for testing)
+Create `frontend/.env` with the API base URL:
 
-Notes:
-- This is a minimal app — no routing library used, simple in-memory route state.
-- For production, add proper authentication flows, form validation, and nicer UI.
+```
+VITE_API_BASE=http://localhost:3001
+```
+
+Pages
+
+- Home — recent lost & found items
+- Lost — post a lost item and browse lost items
+- Found — post a found item and browse found items
+- Profile — sign in and view notifications
+
+Build for production
+
+```powershell
+npm run build
+```
+
+The build output is in `frontend/dist`. Serve it from a static host (S3, Netlify, Vercel) or from the backend server.
+
+Security
+
+- Do not commit secrets or `.env` files to source control. Keep credentials in the deployment environment.
+- Add input validation and HTTPS before deploying to production.
+
+Notes
+
+- This frontend is a simple, self-contained example intended for coursework. It focuses on functionality rather than production hardening.

@@ -1,87 +1,142 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
-const dbPath = process.env.DB_PATH || path.join(__dirname, 'lostnfound.db');
-const db = new sqlite3.Database(dbPath);
+// MySQL RDS adapter using `mysql2`.
+// Exposes a minimal drop-in API matching the previous shape used across
+// the codebase: `init()`, and `db.run/get/all(sql, params, cb)`.
+//
+// Environment variables (set these in `backend/.env` or your environment):
+// RDS_HOST, RDS_PORT, RDS_USER, RDS_PASSWORD, RDS_DATABASE, DB_POOL_SIZE
+
+const mysql = require('mysql2');
+
+let pool = null;
 
 function init() {
-  db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS Users (
-      id TEXT PRIMARY KEY,
-      name TEXT,
-      email TEXT UNIQUE,
-      password_hash TEXT,
-      phone TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
+  if (pool) return;
 
-    db.run(`CREATE TABLE IF NOT EXISTS LostItems (
-      id TEXT PRIMARY KEY,
-      user_id TEXT,
-      image_url TEXT,
-      category TEXT,
-      color TEXT,
-      description TEXT,
-      location TEXT,
-      date_lost TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
+  const host = process.env.RDS_HOST || process.env.DB_HOST;
+  const port = process.env.RDS_PORT ? parseInt(process.env.RDS_PORT, 10) : 3306;
+  const user = process.env.RDS_USER || process.env.DB_USER;
+  const password = process.env.RDS_PASSWORD || process.env.DB_PASSWORD;
+  const database = process.env.RDS_DATABASE || process.env.DB_NAME;
+  const connectionLimit = process.env.DB_POOL_SIZE ? parseInt(process.env.DB_POOL_SIZE, 10) : 10;
 
-    db.run(`CREATE TABLE IF NOT EXISTS FoundItems (
-      id TEXT PRIMARY KEY,
-      user_id TEXT,
-      image_url TEXT,
-      category TEXT,
-      color TEXT,
-      description TEXT,
-      location TEXT,
-      date_found TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
+  if (!host || !user || !password || !database) {
+    console.error('Missing RDS configuration. Please set RDS_HOST, RDS_USER, RDS_PASSWORD and RDS_DATABASE in environment.');
+    return;
+  }
 
-    db.run(`CREATE TABLE IF NOT EXISTS Matches (
-      id TEXT PRIMARY KEY,
-      lost_item_id TEXT,
-      found_item_id TEXT,
-      match_score REAL,
-      notification_sent INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
+  pool = mysql.createPool({
+    host,
+    port,
+    user,
+    password,
+    database,
+    waitForConnections: true,
+    connectionLimit,
+    queueLimit: 0,
+    // enable named placeholders if needed in future: namedPlaceholders: true
+  });
 
-    db.run(`CREATE TABLE IF NOT EXISTS Notifications (
-      id TEXT PRIMARY KEY,
-      user_id TEXT,
-      message TEXT,
-      read_status INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
+  // Optional: test connection
+  pool.getConnection((err, conn) => {
+    if (err) {
+      console.error('Unable to get connection from MySQL pool:', err.message || err);
+    } else {
+      conn.release();
+      console.log('MySQL pool initialized');
 
-    console.log('Database initialized at', dbPath);
+      // Ensure required tables exist. These are idempotent and safe
+      // to run on application start (`IF NOT EXISTS`). If you prefer
+      // controlled migrations, replace this with a migration tool.
+      const schemaStatements = [
+        `CREATE TABLE IF NOT EXISTS Users (
+          id VARCHAR(36) PRIMARY KEY,
+          name VARCHAR(255),
+          email VARCHAR(255) UNIQUE,
+          password_hash VARCHAR(255),
+          phone VARCHAR(50),
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`,
+
+        `CREATE TABLE IF NOT EXISTS LostItems (
+          id VARCHAR(36) PRIMARY KEY,
+          user_id VARCHAR(36),
+          image_url VARCHAR(1024),
+          category VARCHAR(100),
+          color VARCHAR(50),
+          description TEXT,
+          location VARCHAR(255),
+          date_lost DATE,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_lost_user_id (user_id),
+          FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`,
+
+        `CREATE TABLE IF NOT EXISTS FoundItems (
+          id VARCHAR(36) PRIMARY KEY,
+          user_id VARCHAR(36),
+          image_url VARCHAR(1024),
+          category VARCHAR(100),
+          color VARCHAR(50),
+          description TEXT,
+          location VARCHAR(255),
+          date_found DATE,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_found_user_id (user_id),
+          FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`,
+
+        `CREATE TABLE IF NOT EXISTS Notifications (
+          id VARCHAR(36) PRIMARY KEY,
+          user_id VARCHAR(36),
+          message TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_notifications_user_id (user_id),
+          FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
+      ];
+
+      schemaStatements.forEach((sql) => {
+        pool.query(sql, (err) => {
+          if (err) console.error('Error creating table:', err.message || err);
+        });
+      });
+    }
   });
 }
 
-if (require.main === module) {
-  init();
+function ensureInit() {
+  if (!pool) init();
 }
 
-// Ensure existing DB has `phone` column in Users (safe migration)
-function ensurePhoneColumn() {
-  db.serialize(() => {
-    db.all("PRAGMA table_info('Users')", (err, rows) => {
-      if (err) return;
-      const hasPhone = rows && rows.some(r => r.name === 'phone');
-      if (!hasPhone) {
-        try {
-          db.run("ALTER TABLE Users ADD COLUMN phone TEXT", () => {
-            console.log('Added phone column to Users table');
-          });
-        } catch (e) {
-          // ignore
-        }
-      }
+const db = {
+  // run: for INSERT/UPDATE/DELETE. Callback receives (err, result)
+  run(sql, params, cb) {
+    ensureInit();
+    if (typeof params === 'function') { cb = params; params = []; }
+    pool.query(sql, params, (err, results) => {
+      if (cb) cb(err, results);
     });
-  });
-}
+  },
 
-ensurePhoneColumn();
+  // get: return single row
+  get(sql, params, cb) {
+    ensureInit();
+    if (typeof params === 'function') { cb = params; params = []; }
+    pool.query(sql, params, (err, results) => {
+      if (err) return cb && cb(err);
+      const row = Array.isArray(results) && results.length ? results[0] : null;
+      cb && cb(null, row);
+    });
+  },
+
+  // all: return all rows
+  all(sql, params, cb) {
+    ensureInit();
+    if (typeof params === 'function') { cb = params; params = []; }
+    pool.query(sql, params, (err, results) => {
+      if (cb) cb(err, results);
+    });
+  }
+};
 
 module.exports = { db, init };

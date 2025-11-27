@@ -2,3 +2,8 @@ node_modules/
 uploads/
 *.db
 .env
+
+# Ignore any backup or dev env files
+.env.*
+
+# Keep local DBs ignored if present (no local SQLite expected)
