@@ -32,7 +32,7 @@ jobs:
         run: |
           mkdir -p artifacts
           cd backend
-          zip -r artifacts/backend.zip backend/ -x "backend/.git/*"
+          zip -r ../artifacts/backend.zip . -x "*.git*"
           cd ..
           ls -lh artifacts/backend.zip
 
