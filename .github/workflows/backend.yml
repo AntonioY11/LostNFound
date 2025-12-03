@@ -31,7 +31,7 @@ jobs:
       - name: Create backend zip
         run: |
           mkdir -p artifacts
-          cd backend && zip -r ../artifacts/backend.zip . -x "*.git*"
+          zip -r artifacts/backend.zip backend/ -x "backend/.git/*"
           ls -lh artifacts/backend.zip
 
       - name: Configure AWS credentials
