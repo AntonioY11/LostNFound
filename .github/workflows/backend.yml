@@ -31,7 +31,7 @@ jobs:
       - name: Create backend zip
         run: |
           mkdir -p artifacts
-          git -C backend archive --format=zip --output artifacts/backend.zip HEAD
+          cd backend && zip -r ../artifacts/backend.zip . -x "*.git*"
           ls -lh artifacts/backend.zip
 
       - name: Configure AWS credentials
@@ -39,7 +39,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: us-east-1
 
       - name: Upload zip to S3
         env:
