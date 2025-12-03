@@ -1,0 +1,67 @@
+name: Deploy backend to Elastic Beanstalk
+
+on:
+  push:
+    branches: [ main ]
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install backend deps
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Run backend tests (optional)
+        working-directory: ./backend
+        run: npm test || true
+
+      - name: Create backend zip
+        run: |
+          mkdir -p artifacts
+          git -C backend archive --format=zip --output artifacts/backend.zip HEAD
+          ls -lh artifacts/backend.zip
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Upload zip to S3
+        env:
+          BUCKET: ${{ secrets.S3_BUCKET }}
+        run: |
+          aws s3 cp artifacts/backend.zip s3://$BUCKET/deployments/${{ github.sha }}.zip
+
+      - name: Create EB application version
+        env:
+          APP: ${{ secrets.EB_APPLICATION_NAME }}
+          BUCKET: ${{ secrets.S3_BUCKET }}
+          S3KEY: deployments/${{ github.sha }}.zip
+        run: |
+          aws elasticbeanstalk create-application-version \
+            --application-name "$APP" \
+            --version-label "${{ github.sha }}" \
+            --source-bundle S3Bucket=$BUCKET,S3Key=$S3KEY
+
+      - name: Deploy to Elastic Beanstalk environment
+        env:
+          ENV: ${{ secrets.EB_ENVIRONMENT_NAME }}
+        run: |
+          aws elasticbeanstalk update-environment \
+            --environment-name "$ENV" \
+            --version-label "${{ github.sha }}"
