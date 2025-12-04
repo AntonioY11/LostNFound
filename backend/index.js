@@ -217,6 +217,21 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+// Root: redirect to frontend (if configured) or show a minimal API landing page
+app.get('/', (req, res) => {
+  if (FRONTEND_URL) return res.redirect(FRONTEND_URL);
+  res.send(`
+    <html>
+      <head><title>LostNFound API</title></head>
+      <body style="font-family:Arial,Helvetica,sans-serif;padding:24px;">
+        <h1>LostNFound API</h1>
+        <p>This server exposes the API under <code>/api/*</code>.</p>
+        <p>Health: <a href="/health">/health</a></p>
+      </body>
+    </html>
+  `);
+});
+
 app.listen(PORT, () => {
   console.log(`LostNFound backend running on port ${PORT}`);
   console.log(`Use POST /api/register and /api/login to create user and get token.`);
