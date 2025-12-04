@@ -30,8 +30,18 @@ if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && proces
   s3 = new AWS.S3();
 }
 
-// Allow requests from the frontend dev server (CORS)
-app.use(cors());
+// Configure CORS to allow requests from the frontend URL set in environment
+const FRONTEND_URL = process.env.FRONTEND_URL || process.env.VITE_API_BASE_URL || '';
+const corsOptions = {
+  origin: function (origin, callback) {
+    // allow server-to-server or tools with no origin
+    if (!origin) return callback(null, true);
+    if (!FRONTEND_URL || FRONTEND_URL === '*' || origin === FRONTEND_URL) return callback(null, true);
+    return callback(new Error('CORS policy: Origin not allowed'));
+  },
+  credentials: true,
+};
+app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -200,6 +210,7 @@ app.get('/health', (req, res) => {
 app.listen(PORT, () => {
   console.log(`LostNFound backend running on port ${PORT}`);
   console.log(`Use POST /api/register and /api/login to create user and get token.`);
+  console.log(`CORS allowed origin: ${FRONTEND_URL || 'none configured (allowing non-browser requests only)'}`);
 });
 
 module.exports = app;
