@@ -16,7 +16,7 @@ function init() {
   const port = process.env.RDS_PORT ? parseInt(process.env.RDS_PORT, 10) : 3306;
   const user = process.env.RDS_USER || process.env.DB_USER;
   const password = process.env.RDS_PASSWORD || process.env.DB_PASSWORD;
-  const database = process.env.RDS_DATABASE || process.env.DB_NAME;
+  const database = process.env.RDS_DATABASE || process.env.DB_DATABASE;
   const connectionLimit = process.env.DB_POOL_SIZE ? parseInt(process.env.DB_POOL_SIZE, 10) : 10;
 
   if (!host || !user || !password || !database) {
