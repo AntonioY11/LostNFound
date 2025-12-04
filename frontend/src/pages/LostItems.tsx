@@ -63,7 +63,15 @@ export default function LostItems(){
         <div className="card">
           <h3>All Lost Items</h3>
           <ul className="item-list">
-            {items.map(it=> <li key={it.id}><strong>{it.category}</strong> — {it.description} <div className="small">{it.location}</div></li>)}
+            {items.map(it=> (
+              <li key={it.id} className="item-row">
+                {it.image_url ? <img src={it.image_url} alt={it.category} className="thumb" /> : null}
+                <div className="item-body">
+                  <div><strong>{it.category}</strong> — {it.description}</div>
+                  <div className="small">{it.location} {it.date_lost ? '· ' + new Date(it.date_lost).toLocaleDateString() : ''}</div>
+                </div>
+              </li>
+            ))}
           </ul>
         </div>
       </div>

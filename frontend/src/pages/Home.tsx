@@ -15,7 +15,15 @@ export default function Home(){
         <div className="card">
           <h2>Recent Lost Items</h2>
           <ul className="item-list">
-            {lost.slice(0,8).map(it=> <li key={it.id}><strong>{it.category}</strong> — {it.description} <div className="small">{it.location}</div></li>)}
+            {lost.slice(0,8).map(it=> (
+              <li key={it.id} className="item-row">
+                {it.image_url ? <img src={it.image_url} alt={it.category} className="thumb" /> : null}
+                <div>
+                  <div><strong>{it.category}</strong> — {it.description}</div>
+                  <div className="small">{it.location} {it.date_lost ? '· ' + new Date(it.date_lost).toLocaleDateString() : ''}</div>
+                </div>
+              </li>
+            ))}
           </ul>
         </div>
 

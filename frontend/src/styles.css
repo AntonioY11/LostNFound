@@ -16,6 +16,9 @@ button{background:#2b6cb0;color:#fff;padding:8px 12px;border:0;border-radius:4px
 .small{font-size:13px;color:#666}
 .item-list{list-style:none;padding:0;margin:0}
 .item-list li{padding:8px;border-bottom:1px solid #f3f3f3}
+.item-row{display:flex;gap:10px;align-items:flex-start}
+.item-row .thumb{width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid #eee}
+.item-row .item-body{flex:1}
 .h-stack{display:flex;gap:10px;align-items:center}
 .center{display:flex;align-items:center;justify-content:center}
 .footer{margin-top:20px;text-align:center;color:#666;font-size:13px}
