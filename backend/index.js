@@ -31,7 +31,8 @@ if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && proces
 }
 
 // Configure CORS to allow requests from the frontend URL set in environment
-const FRONTEND_URL = process.env.FRONTEND_URL || process.env.VITE_API_BASE_URL || '';
+// Accept several common env names so build/CI variations work (FRONTEND_URL, VITE_API_BASE_URL, VITE_API_BASE)
+const FRONTEND_URL = process.env.FRONTEND_URL || process.env.VITE_API_BASE_URL || process.env.VITE_API_BASE || '';
 const corsOptions = {
   origin: function (origin, callback) {
     // allow server-to-server or tools with no origin

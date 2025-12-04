@@ -3,10 +3,52 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
     <title>LostNFound</title>
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Global runtime error handler to avoid blank pages and surface issues
+      function showCriticalError(title, detail) {
+        try {
+          document.documentElement.innerHTML = '';
+          var pre = document.createElement('pre');
+          pre.style.whiteSpace = 'pre-wrap';
+          pre.style.fontFamily = 'monospace';
+          pre.style.background = '#fff6f6';
+          pre.style.color = '#900';
+          pre.style.padding = '16px';
+          pre.style.margin = '16px';
+          pre.textContent = title + '\n\n' + (detail || '');
+          document.body.appendChild(pre);
+        } catch (e) {
+          console.error('Failed to show critical error', e);
+        }
+        console.error(title, detail);
+      }
+
+      window.addEventListener('error', function (ev) {
+        ev.preventDefault && ev.preventDefault();
+        showCriticalError('Runtime error: ' + (ev && ev.message), ev && ev.error && ev.error.stack ? ev.error.stack : ev.filename + ':' + ev.lineno + ':' + ev.colno);
+      });
+      window.addEventListener('unhandledrejection', function (ev) {
+        ev.preventDefault && ev.preventDefault();
+        showCriticalError('Unhandled promise rejection', ev && (ev.reason && (ev.reason.stack || ev.reason)));
+      });
+
+      // Quick boot log to help confirm which index.html was loaded
+      console.log('Loaded index.html — diagnostic loader active');
+      // Provide a temporary global fallback for older bundles that expect `getApiBase` as a global function.
+      // This returns the runtime config if loaded, otherwise falls back to the known EB domain.
+      try {
+        window.getApiBase = function() {
+          try { if (window.__ENV && window.__ENV.VITE_API_BASE) return window.__ENV.VITE_API_BASE; } catch(e){}
+          return 'https://Lostfound-env.eba-3ddbyeim.us-east-1.elasticbeanstalk.com';
+        }
+      } catch (e) { console.warn('Could not set global getApiBase fallback', e); }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

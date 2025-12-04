@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react'
 
+import getApiBase from '../config'
+
 export default function FoundItems(){
   const [items, setItems] = useState<any[]>([])
   const [form, setForm] = useState({category:'',color:'',description:'',location:'',date_found:''})
   const [file, setFile] = useState<File | null>(null)
 
-  useEffect(()=>{ fetch(((import.meta as any).env.VITE_API_BASE||'http://localhost:3001') + '/api/found').then(r=>r.json()).then(setItems) },[])
+  useEffect(()=>{ fetch(getApiBase() + '/api/found').then(r=>r.json()).then(setItems) },[])
 
   async function submit(e:React.FormEvent){
     e.preventDefault()
@@ -17,7 +19,7 @@ export default function FoundItems(){
     fd.append('location', form.location)
     fd.append('date_found', form.date_found)
     if (file) fd.append('image', file)
-    const res = await fetch(((import.meta as any).env?.VITE_API_BASE||'http://localhost:3001') + '/api/found', { method:'POST', body: fd, headers: token ? { 'Authorization': 'Bearer ' + token } : undefined })
+    const res = await fetch(getApiBase() + '/api/found', { method:'POST', body: fd, headers: token ? { 'Authorization': 'Bearer ' + token } : undefined })
     if (res.ok) { alert('Posted'); window.location.reload() }
     else alert('Error')
   }

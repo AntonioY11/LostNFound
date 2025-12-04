@@ -5,7 +5,7 @@ export default function LostItems(){
   const [form, setForm] = useState({category:'',color:'',description:'',location:'',date_lost:''})
   const [file, setFile] = useState<File | null>(null)
 
-  useEffect(()=>{ fetch((import.meta.env.VITE_API_BASE||'http://localhost:3001') + '/api/lost').then(r=>r.json()).then(setItems) },[])
+  useEffect(()=>{ fetch(getApiBase() + '/api/lost').then(r=>r.json()).then(setItems) },[])
 
   async function submit(e:React.FormEvent){
     e.preventDefault()
@@ -17,9 +17,18 @@ export default function LostItems(){
     fd.append('location', form.location)
     fd.append('date_lost', form.date_lost)
     if (file) fd.append('image', file)
-    const res = await fetch((import.meta.env.VITE_API_BASE||'http://localhost:3001') + '/api/lost', { method:'POST', body: fd, headers: token ? { 'Authorization': 'Bearer ' + token } : undefined })
-    if (res.ok) { alert('Posted'); window.location.reload() }
-    else alert('Error')
+    const url = getApiBase() + '/api/lost'
+    console.log('Posting lost item to', url, 'filePresent=', !!file, 'form=', form)
+    const res = await fetch(url, { method:'POST', body: fd, headers: token ? { 'Authorization': 'Bearer ' + token } : undefined })
+    if (res.ok) {
+      alert('Posted'); window.location.reload()
+    } else {
+      // Try to surface server error body for easier debugging
+      let bodyText = ''
+      try { bodyText = await res.text() } catch (e) { bodyText = '<failed to read response body>' }
+      console.error('Lost item POST failed', res.status, res.statusText, bodyText)
+      alert('Error posting lost item: ' + res.status + '\n' + (bodyText || res.statusText))
+    }
   }
 
   return (

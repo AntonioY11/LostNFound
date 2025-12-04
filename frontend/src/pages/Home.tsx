@@ -5,8 +5,8 @@ export default function Home(){
   const [found, setFound] = useState<any[]>([])
 
   useEffect(()=>{
-    fetch((import.meta.env.VITE_API_BASE || 'http://localhost:3001') + '/api/lost').then(r=>r.json()).then(setLost)
-    fetch((import.meta.env.VITE_API_BASE || 'http://localhost:3001') + '/api/found').then(r=>r.json()).then(setFound)
+    fetch(getApiBase() + '/api/lost').then(r=>r.json()).then(setLost)
+    fetch(getApiBase() + '/api/found').then(r=>r.json()).then(setFound)
   },[])
 
   return (

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import getApiBase from '../config'
 
 export default function Profile(){
   const [profile, setProfile] = useState<any>(null)
@@ -11,7 +12,7 @@ export default function Profile(){
   const [phone, setPhone] = useState('')
   const [editMode, setEditMode] = useState(false)
 
-  const apiBase = (import.meta as any).env?.VITE_API_BASE || 'http://localhost:3001'
+  const apiBase = getApiBase()
 
   useEffect(()=>{
     const token = localStorage.getItem('token')
