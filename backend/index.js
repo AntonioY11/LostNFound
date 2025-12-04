@@ -50,10 +50,16 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 function uploadToS3(buffer, key, contentType) {
   return new Promise((resolve, reject) => {
     if (!s3) return reject(new Error('S3 not configured'));
-    const params = { Bucket: process.env.S3_BUCKET, Key: key, Body: buffer, ACL: 'public-read' };
+    // Do not set ACL here to avoid failures when the bucket blocks public ACLs.
+    // Use bucket policy or CloudFront for public access instead.
+    const params = { Bucket: process.env.S3_BUCKET, Key: key, Body: buffer };
     if (contentType) params.ContentType = contentType;
+    console.log('Uploading to S3 with params', { Bucket: params.Bucket, Key: params.Key, ContentType: params.ContentType });
     s3.upload(params, (err, data) => {
-      if (err) return reject(err);
+      if (err) {
+        console.error('S3.upload error', err && err.stack ? err.stack : err);
+        return reject(err);
+      }
       resolve(data.Location);
     });
   });
@@ -112,8 +118,11 @@ app.post('/api/lost', requireAuth, upload.single('image'), async (req, res) => {
       const s3Url = await uploadToS3(req.file.buffer, key, req.file.mimetype);
       imageUrl = s3Url;
     } catch (err) {
-      console.error('S3 upload error', err);
-      return res.status(500).json({ error: 'Failed to upload image to S3' });
+      console.error('S3 upload error', err && err.stack ? err.stack : err);
+      // Include the S3 error message in the response for debugging purposes.
+      // Remove or redact this before moving to production.
+      const details = err && err.message ? err.message : String(err);
+      return res.status(500).json({ error: 'Failed to upload image to S3', details });
     }
   }
   const { category, color, description, location, date_lost } = req.body;
