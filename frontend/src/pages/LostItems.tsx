@@ -18,16 +18,11 @@ export default function LostItems(){
     fd.append('date_lost', form.date_lost)
     if (file) fd.append('image', file)
     const url = getApiBase() + '/api/lost'
-    console.log('Posting lost item to', url, 'filePresent=', !!file, 'form=', form)
     const res = await fetch(url, { method:'POST', body: fd, headers: token ? { 'Authorization': 'Bearer ' + token } : undefined })
     if (res.ok) {
       alert('Posted'); window.location.reload()
     } else {
-      // Try to surface server error body for easier debugging
-      let bodyText = ''
-      try { bodyText = await res.text() } catch (e) { bodyText = '<failed to read response body>' }
-      console.error('Lost item POST failed', res.status, res.statusText, bodyText)
-      alert('Error posting lost item: ' + res.status + '\n' + (bodyText || res.statusText))
+      alert('Error posting lost item')
     }
   }
 

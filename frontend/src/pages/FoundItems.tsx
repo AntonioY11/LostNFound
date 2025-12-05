@@ -19,9 +19,13 @@ export default function FoundItems(){
     fd.append('location', form.location)
     fd.append('date_found', form.date_found)
     if (file) fd.append('image', file)
-    const res = await fetch(getApiBase() + '/api/found', { method:'POST', body: fd, headers: token ? { 'Authorization': 'Bearer ' + token } : undefined })
-    if (res.ok) { alert('Posted'); window.location.reload() }
-    else alert('Error')
+    const url = getApiBase() + '/api/found'
+    const res = await fetch(url, { method:'POST', body: fd, headers: token ? { 'Authorization': 'Bearer ' + token } : undefined })
+    if (res.ok) {
+      alert('Posted'); window.location.reload()
+    } else {
+      alert('Error posting found item')
+    }
   }
 
   return (
@@ -56,7 +60,15 @@ export default function FoundItems(){
         <div className="card">
           <h3>All Found Items</h3>
           <ul className="item-list">
-            {items.map(it=> <li key={it.id}><strong>{it.category}</strong> — {it.description} <div className="small">{it.location}</div></li>)}
+            {items.map(it=> (
+              <li key={it.id} className="item-row">
+                {it.image_url ? <img src={it.image_url} alt={it.category} className="thumb" /> : null}
+                <div className="item-body">
+                  <div><strong>{it.category}</strong> — {it.description}</div>
+                  <div className="small">{it.location} {it.date_found ? '· ' + new Date(it.date_found).toLocaleDateString() : ''}</div>
+                </div>
+              </li>
+            ))}
           </ul>
         </div>
       </div>

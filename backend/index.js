@@ -54,12 +54,8 @@ function uploadToS3(buffer, key, contentType) {
     // Use bucket policy or CloudFront for public access instead.
     const params = { Bucket: process.env.S3_BUCKET, Key: key, Body: buffer };
     if (contentType) params.ContentType = contentType;
-    console.log('Uploading to S3 with params', { Bucket: params.Bucket, Key: params.Key, ContentType: params.ContentType });
     s3.upload(params, (err, data) => {
-      if (err) {
-        console.error('S3.upload error', err && err.stack ? err.stack : err);
-        return reject(err);
-      }
+      if (err) return reject(err);
       resolve(data.Location);
     });
   });
@@ -118,11 +114,7 @@ app.post('/api/lost', requireAuth, upload.single('image'), async (req, res) => {
       const s3Url = await uploadToS3(req.file.buffer, key, req.file.mimetype);
       imageUrl = s3Url;
     } catch (err) {
-      console.error('S3 upload error', err && err.stack ? err.stack : err);
-      // Include the S3 error message in the response for debugging purposes.
-      // Remove or redact this before moving to production.
-      const details = err && err.message ? err.message : String(err);
-      return res.status(500).json({ error: 'Failed to upload image to S3', details });
+      return res.status(500).json({ error: 'Failed to upload image to S3' });
     }
   }
   const { category, color, description, location, date_lost } = req.body;
@@ -144,7 +136,6 @@ app.post('/api/found', requireAuth, upload.single('image'), async (req, res) => 
       const s3Url = await uploadToS3(req.file.buffer, key, req.file.mimetype);
       imageUrl = s3Url;
     } catch (err) {
-      console.error('S3 upload error', err);
       return res.status(500).json({ error: 'Failed to upload image to S3' });
     }
   }
