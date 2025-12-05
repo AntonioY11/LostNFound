@@ -150,7 +150,10 @@ app.post('/api/found', requireAuth, upload.single('image'), async (req, res) => 
 // List lost items with simple filters
 app.get('/api/lost', (req, res) => {
   const { category, location, q } = req.query;
-  let sql = `SELECT * FROM LostItems WHERE 1=1`;
+  let sql = `SELECT li.*, u.name AS owner_name, u.email AS owner_email, u.phone AS owner_phone
+             FROM LostItems li
+             LEFT JOIN Users u ON li.user_id = u.id
+             WHERE 1=1`;
   const params = [];
   if (category) { sql += ` AND category = ?`; params.push(category); }
   if (location) { sql += ` AND location LIKE ?`; params.push('%' + location + '%'); }
@@ -164,7 +167,10 @@ app.get('/api/lost', (req, res) => {
 // List found items with simple filters
 app.get('/api/found', (req, res) => {
   const { category, location, q } = req.query;
-  let sql = `SELECT * FROM FoundItems WHERE 1=1`;
+  let sql = `SELECT fi.*, u.name AS owner_name, u.email AS owner_email, u.phone AS owner_phone
+             FROM FoundItems fi
+             LEFT JOIN Users u ON fi.user_id = u.id
+             WHERE 1=1`;
   const params = [];
   if (category) { sql += ` AND category = ?`; params.push(category); }
   if (location) { sql += ` AND location LIKE ?`; params.push('%' + location + '%'); }

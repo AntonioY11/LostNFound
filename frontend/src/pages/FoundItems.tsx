@@ -119,7 +119,7 @@ export default function FoundItems(){
           <ul className="item-list">
             {items.map(it=> (
               <li key={it.id} className="item-row">
-                {it.image_url ? <img src={it.image_url} alt={it.category} className="thumb" /> : null}
+                {it.image_url ? <img src={it.image_url} alt={it.category} className="thumb" onError={(e)=>{e.currentTarget.style.display='none';}} /> : null}
                 {editingId === it.id ? (
                   <div className="item-body" style={{flex:1}}>
                     <div style={{display:'grid',gap:8}}>
@@ -138,6 +138,7 @@ export default function FoundItems(){
                   <div className="item-body">
                     <div><strong>{it.category}</strong> — {it.description}</div>
                     <div className="small">{it.location} {it.date_found ? '· ' + new Date(it.date_found).toLocaleDateString() : ''}</div>
+                    <div className="small">Posted by: {it.owner_name || 'Unknown'}{it.owner_email ? ` · ${it.owner_email}` : ''}{it.owner_phone ? ` · ${it.owner_phone}` : ''}</div>
                     {currentUserId === it.user_id && (
                       <div className="h-stack" style={{marginTop:6}}>
                         <button onClick={()=>startEdit(it)} className="btn-sm">Edit</button>
