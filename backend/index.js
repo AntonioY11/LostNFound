@@ -175,6 +175,78 @@ app.get('/api/found', (req, res) => {
   });
 });
 
+// Update lost item (only by owner)
+app.put('/api/lost/:id', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const { category, color, description, location, date_lost } = req.body;
+  
+  // Verify ownership
+  db.get(`SELECT user_id FROM LostItems WHERE id = ?`, [id], (err, item) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!item) return res.status(404).json({ error: 'Item not found' });
+    if (item.user_id !== req.user.id) return res.status(403).json({ error: 'Not authorized to edit this item' });
+    
+    db.run(`UPDATE LostItems SET category = ?, color = ?, description = ?, location = ?, date_lost = ? WHERE id = ?`,
+      [category, color, description, location, date_lost, id], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+      });
+  });
+});
+
+// Delete lost item (only by owner)
+app.delete('/api/lost/:id', requireAuth, (req, res) => {
+  const { id } = req.params;
+  
+  // Verify ownership
+  db.get(`SELECT user_id FROM LostItems WHERE id = ?`, [id], (err, item) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!item) return res.status(404).json({ error: 'Item not found' });
+    if (item.user_id !== req.user.id) return res.status(403).json({ error: 'Not authorized to delete this item' });
+    
+    db.run(`DELETE FROM LostItems WHERE id = ?`, [id], function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    });
+  });
+});
+
+// Update found item (only by owner)
+app.put('/api/found/:id', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const { category, color, description, location, date_found } = req.body;
+  
+  // Verify ownership
+  db.get(`SELECT user_id FROM FoundItems WHERE id = ?`, [id], (err, item) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!item) return res.status(404).json({ error: 'Item not found' });
+    if (item.user_id !== req.user.id) return res.status(403).json({ error: 'Not authorized to edit this item' });
+    
+    db.run(`UPDATE FoundItems SET category = ?, color = ?, description = ?, location = ?, date_found = ? WHERE id = ?`,
+      [category, color, description, location, date_found, id], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+      });
+  });
+});
+
+// Delete found item (only by owner)
+app.delete('/api/found/:id', requireAuth, (req, res) => {
+  const { id } = req.params;
+  
+  // Verify ownership
+  db.get(`SELECT user_id FROM FoundItems WHERE id = ?`, [id], (err, item) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!item) return res.status(404).json({ error: 'Item not found' });
+    if (item.user_id !== req.user.id) return res.status(403).json({ error: 'Not authorized to delete this item' });
+    
+    db.run(`DELETE FROM FoundItems WHERE id = ?`, [id], function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    });
+  });
+});
+
 // Simple notifications fetch
 app.get('/api/notifications', requireAuth, (req, res) => {
   db.all(`SELECT * FROM Notifications WHERE user_id = ? ORDER BY created_at DESC`, [req.user.id], (err, rows) => {
