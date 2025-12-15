@@ -1,57 +1,59 @@
 # LostNFound
-Smart Lost & Found web application scaffold
+A lightweight Lost & Found web app. Backend is Node.js/Express with MySQL (RDS-ready) and S3 image uploads. Frontend is React + TypeScript.
 
-This repository contains a scaffold for a Lost & Found system. It includes a Node.js + Express backend (configured for RDS in production) with image upload support. The frontend is implemented with React + TypeScript (see `frontend/README.md`).
+## What it does
+- Users register/login (JWT)
+- Post lost/found items with images
+- Browse, filter, edit/delete your own posts
+- See poster contact info (name/email/phone)
 
-Quickstart (backend)
+## Stack
+- Backend: Node.js, Express, mysql2, JWT auth, S3 uploads
+- Frontend: React + TypeScript (Vite)
+- Deploy: Elastic Beanstalk (backend) + S3 (frontend)
 
-1. Install dependencies for the backend:
+## Environment (backend)
+Copy `backend/.env.example` to `backend/.env` and fill in:
+- `RDS_HOST`, `RDS_PORT`, `RDS_USER`, `RDS_PASSWORD`, `RDS_DATABASE`
+- `JWT_SECRET`
+- `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `S3_BUCKET` (for image uploads)
 
+## Run locally
+Backend
 ```powershell
 cd backend
 npm install
-```
-
-2. Configure your database connection via environment variables (see `backend/.env.example`). This project expects you to provide RDS connection values (e.g. `RDS_HOST`, `RDS_USER`, `RDS_PASSWORD`, `RDS_DATABASE`, and `DB_CLIENT`).
-
-3. Start the backend server:
-
-```powershell
 npm start
+# runs on http://localhost:3001
 ```
-
-The server listens on port `3001` by default. Available API endpoints:
-
-- `POST /api/register` — register (body: `name`, `email`, `password`)
-- `POST /api/login` — login (body: `email`, `password`) — returns a JWT
-- `POST /api/lost` — create lost item (multipart/form-data: file field `image` and form fields)
-- `GET /api/lost` — list lost items (filters: `category`, `location`, `q`)
-- `POST /api/found` — create found item (same format as lost)
-- `GET /api/found` — list found items
-- `GET /api/notifications` — get in-app notifications (requires `Authorization: Bearer <token>`)
-
-`AWS (optional)`
-
-Configure S3 uploads by creating a `.env` file in the `backend` folder based on `.env.example` and providing the necessary AWS variables (e.g. `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `S3_BUCKET`). When configured, uploaded images will be stored in S3 and public URLs returned.
-
-Switching to RDS / MySQL
-
-This scaffold is prepared for production use with AWS RDS (MySQL). A MySQL adapter using `mysql2` is included in `backend/db.js`. To connect, set the RDS connection environment variables in `backend/.env` (or in your EB environment settings): `RDS_HOST`, `RDS_PORT`, `RDS_USER`, `RDS_PASSWORD`, `RDS_DATABASE`, and optionally `DB_POOL_SIZE`.
-
-If you prefer Postgres or want a richer migration/migration toolchain, consider using `pg` and an ORM or migration tool such as `knex` or `sequelize`.
 
 Frontend
+```powershell
+cd frontend
+npm install
+npm run dev
+# runs on http://localhost:5173 (Vite)
+```
+Set `VITE_API_BASE` in `frontend/.env` to your backend URL (e.g., `http://localhost:3001`).
 
-See `frontend/README.md` for instructions to run the React + TypeScript frontend. The frontend stores the JWT and calls the backend API endpoints.
+## Deploy (outline)
+- Backend: zip via GitHub Actions (or locally) → upload to S3 → Elastic Beanstalk app version.
+- Frontend: `npm run build` in `frontend` → upload `dist/` to your S3 static site (or CloudFront).
 
-Security note
+## API quick reference
+- `POST /api/register` — `name`, `email`, `password`
+- `POST /api/login` — `email`, `password` → JWT
+- `POST /api/lost` (auth, multipart: `image`, fields)
+- `GET /api/lost` (filters: `category`, `location`, `q`)
+- `PUT /api/lost/:id` (auth, owner only)
+- `DELETE /api/lost/:id` (auth, owner only)
+- Same pattern for `/api/found`
 
-- Do not commit secrets or credentials to source control. Keep real secrets in an environment file on the server (e.g. `backend/.env`) and ensure `.gitignore` excludes it.
-- Remove local database files and upload folders from the repository before publishing (the repo includes a `.gitignore` to help with this).
+## Security notes
+- S3 bucket should allow the app role/keys to `PutObject` and `GetObject`; avoid public ACLs unless intended.
+- Lock RDS security groups to EB/your IPs.
 
-Next steps (suggested)
+## Housekeeping
+- Build artifacts (`frontend/dist`) and local uploads are not tracked.
 
-- Implement or refine the frontend UI
-- Add email notifications via AWS SES (optional)
 
-If you would like, I can apply a small polish to this README (examples, diagram, or deployment checklist for EC2 + RDS).
