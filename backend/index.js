@@ -3,8 +3,6 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const multer = require('multer');
-const fs = require('fs');
-const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -13,29 +11,19 @@ const { db, init } = require('./db');
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
-// Ensure uploads directory exists (EB instances may need this)
-try {
-  fs.mkdirSync(path.join(__dirname, 'uploads'), { recursive: true });
-} catch (e) {
-  // ignore
-}
 
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 
-// configure S3 if credentials present
 let s3 = null;
 if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && process.env.AWS_REGION && process.env.S3_BUCKET) {
   AWS.config.update({ region: process.env.AWS_REGION });
   s3 = new AWS.S3();
 }
 
-// Configure CORS to allow requests from the frontend URL set in environment
-// Accept several common env names so build/CI variations work (FRONTEND_URL, VITE_API_BASE_URL, VITE_API_BASE)
 const FRONTEND_URL = process.env.FRONTEND_URL || process.env.VITE_API_BASE_URL || process.env.VITE_API_BASE || '';
 const corsOptions = {
   origin: function (origin, callback) {
-    // allow server-to-server or tools with no origin
     if (!origin) return callback(null, true);
     if (!FRONTEND_URL || FRONTEND_URL === '*' || origin === FRONTEND_URL) return callback(null, true);
     return callback(new Error('CORS policy: Origin not allowed'));
@@ -44,14 +32,11 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Helpers
 function uploadToS3(buffer, key, contentType) {
   return new Promise((resolve, reject) => {
     if (!s3) return reject(new Error('S3 not configured'));
-    // Do not set ACL here to avoid failures when the bucket blocks public ACLs.
-    // Use bucket policy or CloudFront for public access instead.
     const params = { Bucket: process.env.S3_BUCKET, Key: key, Body: buffer };
     if (contentType) params.ContentType = contentType;
     s3.upload(params, (err, data) => {
@@ -74,7 +59,7 @@ function requireAuth(req, res, next) {
   }
 }
 
-// Init DB if needed
+// Init DB
 init();
 
 // Auth
@@ -204,7 +189,6 @@ app.put('/api/lost/:id', requireAuth, async (req, res) => {
 app.delete('/api/lost/:id', requireAuth, (req, res) => {
   const { id } = req.params;
   
-  // Verify ownership
   db.get(`SELECT user_id FROM LostItems WHERE id = ?`, [id], (err, item) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!item) return res.status(404).json({ error: 'Item not found' });
@@ -222,7 +206,6 @@ app.put('/api/found/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { category, color, description, location, date_found } = req.body;
   
-  // Verify ownership
   db.get(`SELECT user_id FROM FoundItems WHERE id = ?`, [id], (err, item) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!item) return res.status(404).json({ error: 'Item not found' });
@@ -240,7 +223,6 @@ app.put('/api/found/:id', requireAuth, async (req, res) => {
 app.delete('/api/found/:id', requireAuth, (req, res) => {
   const { id } = req.params;
   
-  // Verify ownership
   db.get(`SELECT user_id FROM FoundItems WHERE id = ?`, [id], (err, item) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!item) return res.status(404).json({ error: 'Item not found' });
@@ -286,7 +268,6 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Root: redirect to frontend (if configured) or show a minimal API landing page
 app.get('/', (req, res) => {
   if (FRONTEND_URL) return res.redirect(FRONTEND_URL);
   res.send(`

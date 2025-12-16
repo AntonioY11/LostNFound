@@ -1,10 +1,3 @@
-// MySQL RDS adapter using `mysql2`.
-// Exposes a minimal drop-in API matching the previous shape used across
-// the codebase: `init()`, and `db.run/get/all(sql, params, cb)`.
-//
-// Environment variables (set these in `backend/.env` or your environment):
-// RDS_HOST, RDS_PORT, RDS_USER, RDS_PASSWORD, RDS_DATABASE, DB_POOL_SIZE
-
 const mysql = require('mysql2');
 
 let pool = null;
@@ -33,10 +26,8 @@ function init() {
     waitForConnections: true,
     connectionLimit,
     queueLimit: 0,
-    // enable named placeholders if needed in future: namedPlaceholders: true
   });
 
-  // Optional: test connection
   pool.getConnection((err, conn) => {
     if (err) {
       console.error('Unable to get connection from MySQL pool:', err.message || err);
@@ -44,9 +35,6 @@ function init() {
       conn.release();
       console.log('MySQL pool initialized');
 
-      // Ensure required tables exist. These are idempotent and safe
-      // to run on application start (`IF NOT EXISTS`). If you prefer
-      // controlled migrations, replace this with a migration tool.
       const schemaStatements = [
         `CREATE TABLE IF NOT EXISTS Users (
           id VARCHAR(36) PRIMARY KEY,
@@ -109,7 +97,6 @@ function ensureInit() {
 }
 
 const db = {
-  // run: for INSERT/UPDATE/DELETE. Callback receives (err, result)
   run(sql, params, cb) {
     ensureInit();
     if (typeof params === 'function') { cb = params; params = []; }
@@ -118,7 +105,6 @@ const db = {
     });
   },
 
-  // get: return single row
   get(sql, params, cb) {
     ensureInit();
     if (typeof params === 'function') { cb = params; params = []; }
@@ -129,7 +115,6 @@ const db = {
     });
   },
 
-  // all: return all rows
   all(sql, params, cb) {
     ensureInit();
     if (typeof params === 'function') { cb = params; params = []; }
